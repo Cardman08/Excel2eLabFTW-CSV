@@ -15,7 +15,7 @@ This Shiny application provides a user-friendly interface for converting existin
   - Field types: Text, Date, Dropdown, URL
   - Grouping of fields under user-defined labels
 - Auto-formatting for dates (YYYY-MM-DD)
-- Cleansing of empty, `NA`, or `NULL` values
+- Cleaning of empty, `NA`, or `NULL` values
 - CSV export with metadata embedded in JSON structure (eLabFTW-compatible)
 
 ## Intended Use
