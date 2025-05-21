@@ -30,6 +30,7 @@ This application is intended to support research groups transitioning from Excel
 ```r
 install.packages(c("shiny", "readxl", "jsonlite", "readr"))
 
+```
 3. Launch the application:
 shiny::runApp("path/to/csv-sql-merger")
 
