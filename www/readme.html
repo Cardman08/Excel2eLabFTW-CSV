@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>README – Excel zu CSV Konverter für eLabFTW</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #004080;
+    }
+    code {
+      background-color: #f2f2f2;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    pre {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-left: 3px solid #ccc;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>README – Excel zu CSV Konverter für eLabFTW</h1>
+
+  <h2>Beschreibung</h2>
+  <p>
+    Diese R-Shiny-Anwendung konvertiert Excel-Dateien (<code>.xlsx</code>) in CSV-Dateien, die mit <strong>eLabFTW</strong> kompatibel sind. Neben Standardfeldern wie <code>title</code>, <code>content</code> und <code>tags</code> können strukturierte JSON-Metadaten generiert werden.
+  </p>
+
+  <p>
+  Entwickelt vom Datenintegrationszentrum (DIZ) und der <strong>AG (Bio-) Medical Data Science</strong> der Universitätsmedizin Halle.
+  </p>
+   <h2>Funktionen (Version 0.13.2)</h2>
+  <ul>
+    <li>BugFIX: Fehler behoben, der auftritt, wenn man keine Metadaten ausgeben lassen will</li>
+  </ul>
+  <h2>Funktionen (Version 0.13.1)</h2>
+  <ul>
+    <li>Import von Excel-Dateien (.xlsx)</li>
+    <li>Auswahl von Spalten für <code>title</code>, <code>content</code> und <code>tags</code></li>
+    <li>Optionaler Export strukturierter JSON-Metadaten</li>
+    <li>Typauswahl für jede Metadaten-Spalte:
+      <ul>
+        <li><strong>Text</strong>: Freitext</li>
+        <li><strong>Datum</strong>: automatisch zu <code>YYYY-MM-DD</code> konvertiert</li>
+        <li><strong>Dropdown</strong>: einzigartige Werte als Optionen</li>
+        <li><strong>URL</strong>: Linkangabe</li>
+      </ul>
+    </li>
+    <li>Leere oder ungültige Werte im Datumsfeld (<code>NA</code>, <code>NULL</code>, leere Zellen) werden automatisch bereinigt</li>
+    <li>CSV-Datei mit allen ausgewählten Feldern erzeugen und herunterladen</li>
+  </ul>
+
+  <h2>Schritt-für-Schritt Nutzung</h2>
+
+  <ol>
+    <li><strong>Excel-Datei hochladen</strong><br>
+        Lade eine Datei im Format <code>.xlsx</code> hoch (UTF-8 empfohlen).</li>
+    <li><strong>Spalten zuweisen</strong><br>
+        - <code>title</code>: Bildet den sp&auml;teren Ressourcen-Namen<br>
+        - <code>content</code>: Zusatzinformationen aus den enstprechend selektierten Spalten, wird dann im Freitextfeld der Ressource angezeigt.<br>
+        - <code>tags</code>: Schlagwörter (optional, sonst „imported“)</li>
+    <li><strong>Text-Metadaten aktivieren (optional) - Diese Bilden dann extra Felder in den Ressourcen.</strong><br>
+        - Wähle Spalten aus, die in das Metadatenfeld übernommen werden sollen.<br>
+        - Wähle für jede Spalte den Typ:<br>
+          <em>Text</em>, <em>Datum</em>, <em>Dropdown</em> oder <em>URL</em>.<br>
+        - Gib einen Gruppennamen für die Metadaten an (z. B. „Projektinfo“).</li>
+    <li><strong>CSV erzeugen und herunterladen</strong></li>
+  </ol>
+
+  <h2>Beispiel für das JSON-Metadatenfeld</h2>
+
+  <pre><code>{
+  "elabftw": {
+    "extra_fields_groups": [
+      { "id": 1, "name": "Textmetadaten (JSON)" }
+    ]
+  },
+  "extra_fields": {
+    "Projektstart": {
+      "type": "date",
+      "value": "2024-03-01",
+      "group_id": 1
+    },
+    "Kategorie": {
+      "type": "select",
+      "value": "Zellkultur",
+      "options": ["Zellkultur", "PCR", "Mikroskopie"],
+      "group_id": 1
+    }
+  }
+}
+</code></pre>
+
+  <h2>Hinweise zur Formatierung</h2>
+  <ul>
+    <li>Unterstützte Datumsformate: <code>YYYY-MM-DD</code>, <code>DD.MM.YYYY</code>, <code>MM/DD/YYYY</code></li>
+    <li>Leere Felder, <code>NA</code>, <code>NULL</code> (auch als Text) werden entfernt</li>
+    <li>Bei <strong>Dropdown</strong>-Typen werden automatisch alle unterschiedlichen Werte der Spalte als Optionen erkannt</li>
+    <li>Die generierte <code>metadata</code>-Spalte entspricht dem Format, das eLabFTW beim CSV-Import erwartet</li>
+  </ul>
+
+  <h2>Kontakt</h2>
+  <p>
+    <strong>Christian Jaeger</strong><br>
+    Universitätsmedizin Halle<br>
+    E-Mail: <a href="mailto:christian.jaeger@uk-halle.de">christian.jaeger@uk-halle.de</a><br>
+    Zus&auml;tzliche Dokumentation im Intranet: <a href="https://confluence.uk-halle.de/x/wpUbD" target="_blank">Confluence-Link</a>
+  </p>
+
+</body>
+</html>
