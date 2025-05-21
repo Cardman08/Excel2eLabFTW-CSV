@@ -36,16 +36,16 @@ install.packages(c("shiny", "readxl", "jsonlite", "readr"))
 ```r
 shiny::runApp("path/to/excel-to-csv-converter")
 ```
+## Dependencies
+  R ≥ 4.0
+  Packages:
+  - shiny
+  - readxl
+  - jsonlite
+  - readr
+
 ## File Structure
 - app.R – Main Shiny application
 - screenshot_excel_converter.png – Screenshot of the user interface
 - Logo_DIZ_DE.jpg – Institutional logo (optional)
 - readme.html – Optional inline help
-
-## Dependencies
-  R ≥ 4.0
-  Packages:
-    shiny
-    readxl
-    jsonlite
-    readr
