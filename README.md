@@ -32,8 +32,10 @@ install.packages(c("shiny", "readxl", "jsonlite", "readr"))
 
 ```
 3. Launch the application:
-   shiny::runApp("path/to/excel-to-csv-converter")
 
+```r
+shiny::runApp("path/to/excel-to-csv-converter")
+```
 ## File Structure
 - app.R – Main Shiny application
 - screenshot_excel_converter.png – Screenshot of the user interface
