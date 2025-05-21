@@ -29,3 +29,21 @@ This application is intended to support research groups transitioning from Excel
 
 ```r
 install.packages(c("shiny", "readxl", "jsonlite", "readr"))
+
+3. Launch the application:
+shiny::runApp("path/to/csv-sql-merger")
+
+## Dependencies
+R ≥ 4.0
+Packages:
+shiny
+readr
+writexl
+stringr
+DT
+shinyjs
+
+## File Structure
+app.R – Main application code
+screenshot_sql_merger.png – Placeholder for interface screenshot
+readme.html – Optional help documentation
