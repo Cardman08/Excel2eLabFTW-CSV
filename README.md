@@ -32,19 +32,18 @@ install.packages(c("shiny", "readxl", "jsonlite", "readr"))
 
 ```
 3. Launch the application:
-shiny::runApp("path/to/csv-sql-merger")
-
-## Dependencies
-R ≥ 4.0
-Packages:
-shiny
-readr
-writexl
-stringr
-DT
-shinyjs
+   shiny::runApp("path/to/excel-to-csv-converter")
 
 ## File Structure
-app.R – Main application code
-screenshot_sql_merger.png – Placeholder for interface screenshot
-readme.html – Optional help documentation
+- app.R – Main Shiny application
+- screenshot_excel_converter.png – Screenshot of the user interface
+- Logo_DIZ_DE.jpg – Institutional logo (optional)
+- readme.html – Optional inline help
+
+## Dependencies
+  R ≥ 4.0
+  Packages:
+    shiny
+    readxl
+    jsonlite
+    readr
