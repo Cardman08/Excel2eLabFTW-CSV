@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>README – Excel zu CSV Konverter für eLabFTW</title>
+  <title>README – Excel to CSV Converter for eLabFTW</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -29,92 +29,103 @@
 </head>
 <body>
 
-  <h1>README – Excel zu CSV Konverter für eLabFTW</h1>
+  <h1>README – Excel to CSV Converter for eLabFTW</h1>
 
-  <h2>Beschreibung</h2>
+  <h2>Description</h2>
   <p>
-    Diese R-Shiny-Anwendung konvertiert Excel-Dateien (<code>.xlsx</code>) in CSV-Dateien, die mit <strong>eLabFTW</strong> kompatibel sind. Neben Standardfeldern wie <code>title</code>, <code>content</code> und <code>tags</code> können strukturierte JSON-Metadaten generiert werden.
+    This R Shiny application converts Excel files (<code>.xlsx</code>) into CSV files that are compatible with <strong>eLabFTW</strong>. In addition to standard fields such as <code>title</code>, <code>content</code> and <code>tags</code>, structured JSON metadata can be generated and exported.
   </p>
 
   <p>
-  Entwickelt vom Datenintegrationszentrum (DIZ) und der <strong>AG (Bio-) Medical Data Science</strong> der Universitätsmedizin Halle.
+    Developed by the Data Integration Center (DIZ) and the <strong>(Bio-)Medical Data Science Group</strong> at the University Medical Center Halle.
   </p>
-   <h2>Funktionen (Version 0.13.2)</h2>
+
+  <h2>Features (Version 0.13.3)</h2>
   <ul>
-    <li>BugFIX: Fehler behoben, der auftritt, wenn man keine Metadaten ausgeben lassen will</li>
+    <li>New: All selected content columns are now combined into a single <code>body</code> column as an HTML-formatted table</li>
+    <li>New: HTML escaping of all values to prevent layout issues and security risks</li>
+    <li>New: "Select all / deselect all" button for column selection</li>
+    <li>All code comments translated to English</li>
   </ul>
-  <h2>Funktionen (Version 0.13.1)</h2>
+
+  <h2>Features (Version 0.13.2)</h2>
   <ul>
-    <li>Import von Excel-Dateien (.xlsx)</li>
-    <li>Auswahl von Spalten für <code>title</code>, <code>content</code> und <code>tags</code></li>
-    <li>Optionaler Export strukturierter JSON-Metadaten</li>
-    <li>Typauswahl für jede Metadaten-Spalte:
+    <li>BugFix: fixed an error that occurred when no metadata was selected for export</li>
+  </ul>
+
+  <h2>Features (Version 0.13.1)</h2>
+  <ul>
+    <li>Import of Excel files (.xlsx)</li>
+    <li>Column selection for <code>title</code>, <code>content</code> and <code>tags</code></li>
+    <li>Optional export of structured JSON metadata</li>
+    <li>Field type selection for each metadata column:
       <ul>
-        <li><strong>Text</strong>: Freitext</li>
-        <li><strong>Datum</strong>: automatisch zu <code>YYYY-MM-DD</code> konvertiert</li>
-        <li><strong>Dropdown</strong>: einzigartige Werte als Optionen</li>
-        <li><strong>URL</strong>: Linkangabe</li>
+        <li><strong>Text</strong>: free text</li>
+        <li><strong>Date</strong>: automatically converted to <code>YYYY-MM-DD</code></li>
+        <li><strong>Dropdown</strong>: unique values in the column used as options</li>
+        <li><strong>URL</strong>: link format</li>
       </ul>
     </li>
-    <li>Leere oder ungültige Werte im Datumsfeld (<code>NA</code>, <code>NULL</code>, leere Zellen) werden automatisch bereinigt</li>
-    <li>CSV-Datei mit allen ausgewählten Feldern erzeugen und herunterladen</li>
+    <li>Empty or invalid date values (<code>NA</code>, <code>NULL</code>, empty cells) are automatically cleaned</li>
+    <li>Generates a CSV file with all selected fields for download</li>
   </ul>
 
-  <h2>Schritt-für-Schritt Nutzung</h2>
+  <h2>Step-by-Step Usage</h2>
 
   <ol>
-    <li><strong>Excel-Datei hochladen</strong><br>
-        Lade eine Datei im Format <code>.xlsx</code> hoch (UTF-8 empfohlen).</li>
-    <li><strong>Spalten zuweisen</strong><br>
-        - <code>title</code>: Bildet den sp&auml;teren Ressourcen-Namen<br>
-        - <code>content</code>: Zusatzinformationen aus den enstprechend selektierten Spalten, wird dann im Freitextfeld der Ressource angezeigt.<br>
-        - <code>tags</code>: Schlagwörter (optional, sonst „imported“)</li>
-    <li><strong>Text-Metadaten aktivieren (optional) - Diese Bilden dann extra Felder in den Ressourcen.</strong><br>
-        - Wähle Spalten aus, die in das Metadatenfeld übernommen werden sollen.<br>
-        - Wähle für jede Spalte den Typ:<br>
-          <em>Text</em>, <em>Datum</em>, <em>Dropdown</em> oder <em>URL</em>.<br>
-        - Gib einen Gruppennamen für die Metadaten an (z. B. „Projektinfo“).</li>
-    <li><strong>CSV erzeugen und herunterladen</strong></li>
+    <li><strong>Upload an Excel file</strong><br>
+        Upload a <code>.xlsx</code> file (UTF-8 recommended).</li>
+    <li><strong>Assign columns</strong><br>
+        - <code>title</code>: used as the resource name in eLabFTW<br>
+        - <code>body</code>: contains all selected fields as an HTML table for the content field<br>
+        - <code>tags</code>: optional keywords (defaults to "imported" if left blank)</li>
+    <li><strong>Enable metadata (optional)</strong><br>
+        - Select the columns to include in the metadata block<br>
+        - Choose a type for each column:<br>
+          <em>Text</em>, <em>Date</em>, <em>Dropdown</em>, or <em>URL</em><br>
+        - Provide a group name for the metadata (e.g. "Project Info")</li>
+    <li><strong>Generate and download CSV</strong></li>
   </ol>
 
-  <h2>Beispiel für das JSON-Metadatenfeld</h2>
+  <h2>Example of the JSON Metadata Field</h2>
 
   <pre><code>{
   "elabftw": {
     "extra_fields_groups": [
-      { "id": 1, "name": "Textmetadaten (JSON)" }
+      { "id": 1, "name": "Text Metadata (JSON)" }
     ]
   },
   "extra_fields": {
-    "Projektstart": {
+    "Project Start": {
       "type": "date",
       "value": "2024-03-01",
       "group_id": 1
     },
-    "Kategorie": {
+    "Category": {
       "type": "select",
-      "value": "Zellkultur",
-      "options": ["Zellkultur", "PCR", "Mikroskopie"],
+      "value": "Cell Culture",
+      "options": ["Cell Culture", "PCR", "Microscopy"],
       "group_id": 1
     }
   }
 }
 </code></pre>
 
-  <h2>Hinweise zur Formatierung</h2>
+  <h2>Formatting Notes</h2>
   <ul>
-    <li>Unterstützte Datumsformate: <code>YYYY-MM-DD</code>, <code>DD.MM.YYYY</code>, <code>MM/DD/YYYY</code></li>
-    <li>Leere Felder, <code>NA</code>, <code>NULL</code> (auch als Text) werden entfernt</li>
-    <li>Bei <strong>Dropdown</strong>-Typen werden automatisch alle unterschiedlichen Werte der Spalte als Optionen erkannt</li>
-    <li>Die generierte <code>metadata</code>-Spalte entspricht dem Format, das eLabFTW beim CSV-Import erwartet</li>
+    <li>Supported date formats: <code>YYYY-MM-DD</code>, <code>DD.MM.YYYY</code>, <code>MM/DD/YYYY</code></li>
+    <li>Empty values, <code>NA</code>, <code>NULL</code> (even as text) are filtered automatically</li>
+    <li>For <strong>Dropdown</strong> types, all unique values in the selected column will be used as options</li>
+    <li>The generated <code>metadata</code> column follows the format expected by eLabFTW during CSV import</li>
   </ul>
 
-  <h2>Kontakt</h2>
+
+  <h2>Contact</h2>
   <p>
     <strong>Christian Jaeger</strong><br>
-    Universitätsmedizin Halle<br>
-    E-Mail: <a href="mailto:christian.jaeger@uk-halle.de">christian.jaeger@uk-halle.de</a><br>
-    Zus&auml;tzliche Dokumentation im Intranet: <a href="https://confluence.uk-halle.de/x/wpUbD" target="_blank">Confluence-Link</a>
+    University Medicine Halle<br>
+    E-mail: <a href="mailto:christian.jaeger@uk-halle.de">christian.jaeger@uk-halle.de</a><br>
+    Additional Documentation in intranet: <a href="https://confluence.uk-halle.de/x/wpUbD" target="_blank">Confluence link</a>
   </p>
 
 </body>
