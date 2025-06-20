@@ -1,78 +1,80 @@
 ####
-# Version: 0.13.2
+# Version: 0.13.3
 # Author:  Christian Jaeger (christian.jaeger@uk-halle.de)
-# 20250519
-####
-
-################
+# Date:    2025-06-20
 #
-## Beschreibung: Excel zu CSV Konverter
+# Description: Excel to CSV converter for eLabFTW (>= v5.2.x)
+#
+# Changelog 0.13.3:
+# - Adjusted to new import logic in eLabFTW (from version 5.2.x):
+#   → All selected content columns are now combined into a single 'body' column formatted as an HTML table.
+#   → Format: <table><tr><td>ColumnName</td><td>Value</td></tr>...</table>
+# - HTML escaping added for all cell values to prevent formatting issues or HTML injection.
+# - New feature: "Select all / deselect all" toggle button for the content column selection (`checkboxGroupInput`).
+# - All inline code comments translated to English.
+#
+# Previous versions:
+#
 # 0.13.2
-# BugFix - Fehler, wenn keine Metadaten ausgegeben werden sollen, behoben.
+# - BugFix: Prevented crash when no metadata was selected for export.
 #
+# 0.13.1
+# - Added support for selectable metadata field types: 
+#     * Text: free text
+#     * Date: automatic formatting to YYYY-MM-DD
+#     * Dropdown: unique cell values used as selectable options
+#     * URL: web link format
+# - Automatic filtering of empty/invalid values (NA, NULL, empty string).
 #
 # 0.12.x
+# - Structural changes:
+#     * All Excel columns now exported as separate fields (no longer grouped in one content block).
+#     * Optional export of metadata (text or URL) and tags via checkboxes.
+#     * Reordered UI components for better usability.
+#     * Default tag renamed from "Standard-tags" to "Imported".
+#     * README and contact section with logo placeholder added.
 #
-## Main Changes:
-# Separate Felder für alle Spalten des Excels (nicht mehr im Content Block, da sonst keine Zeilenumbrüche umsetzbar sind)
-# Checkboxen zur Auswahl, ob Metadaten (text oder URLs) und Tags exportiert werden sollen.
-# Änderung der Reihenfolge von Schaltflächen und Eingabefeldern (etwas aufgeräumt ;)
-# Standard-tags wurde in Imported umbenannt. (wird nur gesetzt, wenn keine Auswahl für Tags getroffen wird)
-# Readme und Kontakt (Logo vorbereitet)
-#
-# 0.13.x
-#
-# Für jede Metadaten-Spalte wählbarer Typ:
-#   Text: Freitext
-#   Datum: Automatische Formatierung in YYYY-MM-DD
-#   Dropdown: Automatische Erkennung aller unterschiedlichen Zellinhalte als Auswahloptionen
-#   URL: Format für Weblinks
-# Automatisches Filtern leerer oder ungültiger Eingaben (NA, NULL, leere Felder)
-#
-################
-
-
+####
 
 library(shiny)
 library(readxl)
 library(jsonlite)
 library(readr)
 
-# UI der Shiny-App
+# UI definition
 ui <- fluidPage(
-  tags$head(tags$title("Excel zu CSV Konverter - DIZ & Biomedical Data Science")),
+  tags$head(tags$title("Excel to CSV Converter - DIZ & Biomedical Data Science")),
   titlePanel(
     div(
       tags$img(src = "Logo_DIZ_DE.jpg", height = "80px", style = "margin-right: 10px;"),
       div(
-        h1("Excel zu CSV Konverter für eLabFTW - 0.13.2", style = "margin-bottom: 0px;"),
-        h4("Ein Service des Datenintegrationszentrums (DIZ) und der AG (Bio-) Medical Data Science", 
+        h1("Excel to CSV Converter for eLabFTW - 0.13.3", style = "margin-bottom: 0px;"),
+        h4("A service by the Data Integration Center (DIZ) and the (Bio-)Medical Data Science Unit", 
            style = "margin-top: 5px; color: gray; font-weight: normal;")
       )
     )
   ),
   
-  
   sidebarLayout(
     sidebarPanel(
-      fileInput("file", "Lade eine Excel-Datei hoch", accept = c(".xlsx")),
+      fileInput("file", "Upload an Excel file", accept = c(".xlsx")),
       uiOutput("columns_selector"),
       hr(),
-      checkboxInput("enable_tags", "Tags ausgeben", value = TRUE),
+      checkboxInput("enable_tags", "Export tags", value = TRUE),
       uiOutput("tags_selector"),
       hr(),
-      checkboxInput("enable_text_metadata", "Text-Metadaten hinzufügen", value = FALSE),
+      checkboxInput("enable_text_metadata", "Add text metadata", value = FALSE),
       uiOutput("group_name_text_ui"),
       uiOutput("json_columns_selector"),
       hr(),
-      actionButton("generate_csv", "CSV erstellen"),
-      downloadButton("download_csv", "CSV herunterladen"),
+      actionButton("generate_csv", "Generate CSV"),
+      downloadButton("download_csv", "Download CSV"),
       hr(),
       tags$a(href = "readme.html", "README", target = "_blank"),
       br(), br(),
-      h4("Kontakt"),
-      tags$p("Fragen? Schreiben Sie an: "),
-      tags$a(href = "mailto:christian.jaeger@uk-halle.de", "christian.jaeger@uk-halle.de"),
+      h4("Contact"),
+      tags$p("Questions? Contact: "),
+      tags$a(href = "mailto:christian.jaeger@uk-halle.de", "christian.jaeger@uk-halle.de")
     ),
     mainPanel(
       tableOutput("preview_data")
@@ -80,10 +82,21 @@ ui <- fluidPage(
   )
 )
 
-# Server der Shiny-App
+# Server logic
 server <- function(input, output, session) {
   
-  # New 13 - fange Nullwerte ab (Auch groß und kleinschreibung der nullwerte beachten)
+  # HTML escaping function to prevent injection
+  htmlEscape <- function(s) {
+    if (is.na(s) || is.null(s)) return("")
+    s <- gsub("&", "&amp;", s)
+    s <- gsub("<", "&lt;", s)
+    s <- gsub(">", "&gt;", s)
+    s <- gsub("\"", "&quot;", s)
+    s <- gsub("'", "&#039;", s)
+    return(s)
+  }
+  
+  # Normalize and clean values (handling NULL, NA, etc.)
   clean_value <- function(x) {
     val <- trimws(as.character(x))
     if (is.null(x) || is.na(x) || val == "" || toupper(val) == "NA" || toupper(val) == "NULL") {
@@ -93,83 +106,94 @@ server <- function(input, output, session) {
     }
   }
   
-  
-  # Reaktive Datei: Lese die hochgeladene Excel-Datei
+  # Load uploaded Excel file
   excel_data <- reactive({
     req(input$file)
     read_excel(input$file$datapath)
   })
   
-  # Zeige die verfügbaren Spalten zur Auswahl
+  # Toggle select/deselect all content columns
+  observeEvent(input$toggle_all_cols, {
+    req(excel_data())
+    current <- input$content_cols
+    all_cols <- colnames(excel_data())
+    
+    updateCheckboxGroupInput(session, "content_cols",
+                             selected = if (length(current) < length(all_cols)) all_cols else character(0))
+  })
+  
+  # Column selection UI (including select all toggle)
   output$columns_selector <- renderUI({
     req(excel_data())
     column_names <- colnames(excel_data())
     
     tagList(
-      selectInput("title_col", "Wähle die Spalte für 'title':", choices = column_names, selected = column_names[1]),
-      checkboxGroupInput("content_cols", "Wähle die Spalten für die Ausgabe:", choices = column_names, selected = column_names[2])
+      selectInput("title_col", "Select column for 'title':", choices = column_names, selected = column_names[1]),
+      actionLink("toggle_all_cols", "Select / Deselect All", style = "margin-bottom: 5px; display: block;"),
+      checkboxGroupInput("content_cols", "Select columns for body content output:", choices = column_names, selected = column_names[2])
     )
   })
   
-  # Tags-Spalte aktivieren/deaktivieren
+  # Tags selection UI (optional)
   output$tags_selector <- renderUI({
     req(excel_data())
     column_names <- colnames(excel_data())
     
     if (input$enable_tags) {
-      selectInput("tags_col", "Wähle die Spalte für 'tags' (leer = \"Imported\") (optional):", choices = c("", column_names), selected = "")
+      selectInput("tags_col", "Select column for 'tags' (empty = \"Imported\") (optional):", choices = c("", column_names), selected = "")
     }
   })
   
-  # JSON-Text-Metadaten aktivieren/deaktivieren NEW_13
+  # JSON metadata selector UI
   output$json_columns_selector <- renderUI({
     req(excel_data())
     column_names <- colnames(excel_data())
     
     if (input$enable_text_metadata) {
       tagList(
-        checkboxGroupInput("json_cols", "Wähle die Spalten für zusätzliche Metadaten:", 
+        checkboxGroupInput("json_cols", "Select columns for additional metadata:", 
                            choices = column_names, selected = NULL),
         uiOutput("json_col_type_selectors")
       )
     }
   })
   
+  # Metadata type selectors per column
   output$json_col_type_selectors <- renderUI({
     req(input$json_cols)
     lapply(input$json_cols, function(col) {
       selectInput(
         inputId = paste0("json_type_", col),
-        label = paste("Typ für Spalte:", col),
-        choices = c("Text", "Datum (ohne Uhrzeit)", "Drop-Down", "URL"),
+        label = paste("Type for column:", col),
+        choices = c("Text", "Date (no time)", "Drop-Down", "URL"),
         selected = "Text"
       )
     })
   })
   
+  # Group name for JSON metadata
   output$group_name_text_ui <- renderUI({
     if (input$enable_text_metadata) {
-      textInput("group_name_text", "Name der JSON-Gruppe für Textmetadaten:", value = "Textmetadaten (JSON)")
+      textInput("group_name_text", "Name of JSON group for text metadata:", value = "Text Metadata (JSON)")
     }
   })
-
   
-  # Vorschau
+  # Preview of uploaded data
   output$preview_data <- renderTable({
     req(excel_data())
-    head(excel_data(), 10)  # Zeige die ersten 10 Zeilen
+    head(excel_data(), 10)
   })
   
-  # Generiere die CSV-Datei
+  # CSV generation
   generate_csv <- reactive({
     req(excel_data(), input$title_col)
     
     data <- excel_data()
     
-    # 'title'-Spalte
+    # Add 'title' column
     data$title <- data[[input$title_col]]
     
-    # 'tags'-Spalte, falls aktiviert und ein Wert ausgewählt wurde oder Standardwert setzen - (Imported)
+    # Add 'tags' column if enabled
     if (input$enable_tags) {
       if (!is.null(input$tags_col) && input$tags_col != "") {
         data$tags <- data[[input$tags_col]]
@@ -178,46 +202,37 @@ server <- function(input, output, session) {
       }
     }
     
-    # Metadaten generieren, falls aktiviert NEW_13
+    # Create metadata as JSON if enabled
     if (input$enable_text_metadata) {
       data$metadata <- apply(data, 1, function(row) {
         extra_fields_groups <- list()
         extra_fields <- list()
         group_id <- 1
         
-        if (input$enable_text_metadata && !is.null(input$json_cols) && length(input$json_cols) > 0) {
+        if (!is.null(input$json_cols) && length(input$json_cols) > 0) {
           for (field in input$json_cols) {
             field_type <- input[[paste0("json_type_", field)]]
             value <- as.character(row[[field]])
             field_data <- list(group_id = group_id)
             
-            # Typ-bezogene Verarbeitung
             if (field_type == "Text") {
               field_data$type <- "text"
               field_data$value <- value
-            } else if (field_type == "Datum (ohne Uhrzeit)") {
+            } else if (field_type == "Date (no time)") {
               field_data$type <- "date"
               value <- clean_value(row[[field]])
-              #field_data$value <- format(as.Date(value), "%Y-%m-%d")
               parsed_date <- suppressWarnings(as.Date(value, tryFormats = c("%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y")))
               field_data$value <- if (!is.na(parsed_date)) format(parsed_date, "%Y-%m-%d") else ""
             } else if (field_type == "Drop-Down") {
               field_data$type <- "select"
               value <- clean_value(row[[field]])
               field_data$value <- value
-              
-              # Alle Werte der Spalte bereinigen
               field_values <- excel_data()[[field]]
               field_values <- sapply(field_values, clean_value, USE.NAMES = FALSE)
-              
-              # Duplikate entfernen
               opts <- unique(field_values)
-              
-              # Workaround: eLabFTW erwartet bei 'options' ein Array – auch wenn nur 1 Wert!
               if (length(opts) == 1) {
-                opts <- c(opts, opts[1])  # künstlich duplizieren
+                opts <- c(opts, opts[1])
               }
-              
               field_data$options <- opts
             } else if (field_type == "URL") {
               field_data$type <- "url"
@@ -241,13 +256,21 @@ server <- function(input, output, session) {
       })
     }
     
-    # Wähle nur die tatsächlich benötigten Spalten
-    selected_columns <- c("title")
+    # Create 'body' column as HTML table from selected content columns
+    if (!is.null(input$content_cols) && length(input$content_cols) > 0) {
+      data$body <- apply(data, 1, function(row) {
+        rows <- lapply(input$content_cols, function(col) {
+          value <- clean_value(row[[col]])
+          paste0("<tr><td><strong>", htmlEscape(col), "</strong></td><td>", htmlEscape(value), "</td></tr>")
+        })
+        paste0("<table>", paste0(rows, collapse = ""), "</table>")
+      })
+    }
+    
+    # Define output columns
+    selected_columns <- c("title", "body")
     if (input$enable_tags) {
       selected_columns <- c(selected_columns, "tags")
-    }
-    if (!is.null(input$content_cols) && length(input$content_cols) > 0) {
-      selected_columns <- c(selected_columns, input$content_cols)
     }
     if (input$enable_text_metadata) {
       selected_columns <- c(selected_columns, "metadata")
@@ -257,7 +280,7 @@ server <- function(input, output, session) {
     data
   })
   
-  # CSV-Datei für den Download bereitstellen
+  # CSV file download
   output$download_csv <- downloadHandler(
     filename = function() {
       paste0("elabftw_output_", Sys.Date(), ".csv")
@@ -269,5 +292,5 @@ server <- function(input, output, session) {
   )
 }
 
-# Shiny-App starten
+# Launch the Shiny app
 shinyApp(ui = ui, server = server)
