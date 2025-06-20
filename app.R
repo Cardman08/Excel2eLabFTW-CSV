@@ -151,8 +151,9 @@ server <- function(input, output, session) {
     
     if (input$enable_text_metadata) {
       tagList(
-        checkboxGroupInput("json_cols", "Select columns for additional metadata:", 
-                           choices = column_names, selected = NULL),
+        tags$div(style = "color: #888; font-size: 90%; margin-top: -10px;",
+                 "Note: Double quotes (\") in metadata values may cause problems in the exported JSON. Please avoid them."),
+        
         uiOutput("json_col_type_selectors")
       )
     }
@@ -205,55 +206,82 @@ server <- function(input, output, session) {
     # Create metadata as JSON if enabled
     if (input$enable_text_metadata) {
       data$metadata <- apply(data, 1, function(row) {
-        extra_fields_groups <- list()
-        extra_fields <- list()
         group_id <- 1
+        extra_fields <- list()
         
         if (!is.null(input$json_cols) && length(input$json_cols) > 0) {
           for (field in input$json_cols) {
+            if (!field %in% names(row)) next
+            
             field_type <- input[[paste0("json_type_", field)]]
-            value <- as.character(row[[field]])
+            value_raw <- row[[field]]
+            value <- clean_value(value_raw)
+            
+            # skip invalid or empty
+            if (is.null(value) || length(value) == 0 || value == "") next
+            
             field_data <- list(group_id = group_id)
             
             if (field_type == "Text") {
               field_data$type <- "text"
-              field_data$value <- value
+              #field_data$value <- value
+              # New - robuster
+              field_data$value <- fromJSON(toJSON(value, auto_unbox = TRUE))
+              
             } else if (field_type == "Date (no time)") {
-              field_data$type <- "date"
-              value <- clean_value(row[[field]])
               parsed_date <- suppressWarnings(as.Date(value, tryFormats = c("%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y")))
-              field_data$value <- if (!is.na(parsed_date)) format(parsed_date, "%Y-%m-%d") else ""
+              if (!is.na(parsed_date)) {
+                field_data$type <- "date"
+                #field_data$value <- format(parsed_date, "%Y-%m-%d")
+                #New - robuster
+                field_data$value <- fromJSON(toJSON(format(parsed_date, "%Y-%m-%d"), auto_unbox = TRUE))
+              } else {
+                next
+              }
+              
             } else if (field_type == "Drop-Down") {
               field_data$type <- "select"
-              value <- clean_value(row[[field]])
-              field_data$value <- value
+              #field_data$value <- value
+              #New - robuster
+              field_data$value <- fromJSON(toJSON(value, auto_unbox = TRUE))
+              
               field_values <- excel_data()[[field]]
               field_values <- sapply(field_values, clean_value, USE.NAMES = FALSE)
               opts <- unique(field_values)
-              if (length(opts) == 1) {
-                opts <- c(opts, opts[1])
-              }
-              field_data$options <- opts
+              opts <- opts[opts != ""]  # remove empty strings
+              if (length(opts) == 1) opts <- c(opts, opts[1])
+              if (!(value %in% opts)) next
+              #field_data$options <- opts
+              field_data$options <- fromJSON(toJSON(opts, auto_unbox = TRUE))
+              
             } else if (field_type == "URL") {
               field_data$type <- "url"
-              field_data$value <- value
+              #field_data$value <- value
+              # New - robuster
+              field_data$value <- fromJSON(toJSON(value, auto_unbox = TRUE))
             }
             
-            extra_fields[[field]] <- field_data
+            # only add valid field
+            if (!is.null(field_data$value) && field_data$value != "") {
+              extra_fields[[field]] <- field_data
+            }
           }
-          
-          extra_fields_groups <- list(list(id = group_id, name = input$group_name_text))
         }
+        
+        # only generate JSON if fields exist
+        if (length(extra_fields) == 0) return("")
         
         json <- list(
           elabftw = list(
-            extra_fields_groups = extra_fields_groups
+            extra_fields_groups = list(list(id = group_id, name = input$group_name_text))
           ),
           extra_fields = extra_fields
         )
         
-        toJSON(json, auto_unbox = TRUE)
+        toJSON(json, auto_unbox = TRUE, pretty = FALSE)
       })
+      
+      
     }
     
     # Create 'body' column as HTML table from selected content columns
@@ -268,7 +296,10 @@ server <- function(input, output, session) {
     }
     
     # Define output columns
-    selected_columns <- c("title", "body")
+    selected_columns <- c("title")
+    if (!is.null(input$content_cols) && length(input$content_cols) > 0) {
+      selected_columns <- c(selected_columns, "body")
+    }
     if (input$enable_tags) {
       selected_columns <- c(selected_columns, "tags")
     }
