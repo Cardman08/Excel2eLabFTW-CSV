@@ -152,7 +152,7 @@ server <- function(input, output, session) {
     if (input$enable_text_metadata) {
       tagList(
         tags$div(style = "color: #888; font-size: 90%; margin-top: -10px;",
-                 "Note: Double quotes (\") in metadata values may cause problems in the exported JSON. Please avoid them."),
+                 "Note: Double quotes (\") in metadata values or or colons (:) in column names may cause problems in the exported JSON. Please avoid them."),
         checkboxGroupInput("json_cols", "Select columns for additional metadata:", 
                            choices = column_names, selected = NULL),
         
@@ -232,14 +232,14 @@ server <- function(input, output, session) {
               
             } else if (field_type == "Date (no time)") {
               parsed_date <- suppressWarnings(as.Date(value, tryFormats = c("%Y-%m-%d", "%d.%m.%Y", "%m/%d/%Y")))
-              if (!is.na(parsed_date)) {
+              
+              if (!is.null(parsed_date) && length(parsed_date) > 0 && !is.na(parsed_date)) {
                 field_data$type <- "date"
-                #field_data$value <- format(parsed_date, "%Y-%m-%d")
-                #New - robuster
                 field_data$value <- fromJSON(toJSON(format(parsed_date, "%Y-%m-%d"), auto_unbox = TRUE))
               } else {
-                next
+                next  # skip invalid dates
               }
+              
               
             } else if (field_type == "Drop-Down") {
               field_data$type <- "select"
