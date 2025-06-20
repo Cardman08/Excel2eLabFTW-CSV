@@ -153,6 +153,8 @@ server <- function(input, output, session) {
       tagList(
         tags$div(style = "color: #888; font-size: 90%; margin-top: -10px;",
                  "Note: Double quotes (\") in metadata values may cause problems in the exported JSON. Please avoid them."),
+        checkboxGroupInput("json_cols", "Select columns for additional metadata:", 
+                           choices = column_names, selected = NULL),
         
         uiOutput("json_col_type_selectors")
       )
